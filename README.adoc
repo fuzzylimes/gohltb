@@ -1,0 +1,70 @@
+= gohltb (go howlongtobeat.com)
+:toc:
+
+goltb is an unofficial cli tool and go library for the website howlongtobeat.com. It provides an aggregated view of user completion times for video games.
+
+== Usage
+=== CLI Tool
+
+.CLI usage
+----
+% ./gohltb -h          
+Usage of ./gohltb:
+  -g string
+        game title to query for
+----
+
+==== Query for game
+
+.basic game query
+----
+% ./gohltb -g "bugsnax"
+[
+    {
+        "title": "bugsnax",
+        "main": "7½ Hours",
+        "main-extra": "10½ Hours",
+        "completionist": "13½ Hours"
+    }
+]
+----
+
+=== Package
+
+==== Quick Start
+1. Add `require "github.com/fuzzylimes/gohltb" latest` to your `go.mod` file
+2. Run `go get` to pick up package
+3. Call `hltb.SearchGame` to query for a game
+
+===== Example
+
+.main.go
+[source,golang]
+----
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/fuzzylimes/gohltb"
+)
+
+func main() {
+	games, err := gohltb.SearchGame("pokemon")
+	if err != nil {
+		log.Fatal(err)
+	}
+	j, err := games.JSON()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(j)
+}
+----
+
+=== Disclaimer
+
+====
+I am not associated with `howlongtobeat.com` in any way, shape, or form. The data collected by this tool/package all belongs to the owner(s) of `howlongtobeat.com`. If you are the owner and would like this tool/library removed, please reach out!
+====
