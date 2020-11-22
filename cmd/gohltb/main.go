@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/fuzzylimes/gohltb"
-	"github.com/fuzzylimes/gohltb/query"
 )
 
 var queryVar string

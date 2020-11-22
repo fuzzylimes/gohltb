@@ -15,6 +15,9 @@ type Modifier string
 // SortDirection specifies the direction the responses will be sorted (baed on SortBy)
 type SortDirection string
 
+// QueryType is the subject being queried
+type QueryType string
+
 const (
 	// Platforms
 
@@ -181,4 +184,16 @@ const (
 	NormalOrder SortDirection = "Normal Order"
 	// ReverseOrder sorts in the reverse direction specified by the SortBy method
 	ReverseOrder SortDirection = "Reverse Order"
+
+	/*
+		QueryType
+
+		Specifies the kind of query that will be made. Determines
+		which resource the query is running against
+	*/
+
+	// GameQuery will query against game titles
+	GameQuery QueryType = "games"
+	// UserQuery will query against user names
+	UserQuery QueryType = "users"
 )
