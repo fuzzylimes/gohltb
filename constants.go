@@ -1,4 +1,4 @@
-package query
+package gohltb
 
 // Platform is where the game is played (i.e. console, operating system)
 type Platform string

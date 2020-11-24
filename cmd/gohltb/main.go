@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/fuzzylimes/gohltb"
 )
@@ -17,14 +16,12 @@ func init() {
 }
 
 func main() {
-	if queryVar == "" {
-		flag.PrintDefaults()
-		os.Exit(1)
-	}
 	games, err := gohltb.SearchGame(queryVar)
 	if err != nil {
 		log.Fatal(err)
 	}
+	games, err = games.GetNextPage()
+	games, err = games.GetNextPage()
 	j, err := games.JSON()
 	if err != nil {
 		log.Fatal(err)
