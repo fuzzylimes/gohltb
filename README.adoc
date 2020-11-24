@@ -1,31 +1,57 @@
 = gohltb (go howlongtobeat.com)
 :toc:
 
-goltb is an unofficial cli tool and go library for the website howlongtobeat.com. It provides an aggregated view of user completion times for video games.
+gohltb is an unofficial cli tool and go library for the website howlongtobeat.com.
+It provides an aggregated view of user completion times for video games.
 
 == Usage
+gohltb can both be used as a library as well as a standalone CLI tool, here's how
+to use both of them.
+
 === CLI Tool
+The CLI tool is a very simple query implementation of the library. As of this time,
+it doesn't to a whole lot:
+
+. Takes in a set of user query parameters (i.e. game title).
+. Prints out a JSON conversion of the result data to the console.
+.. Response Data is always paged, and only current page will be printed.
+. That's it.
 
 .CLI usage
 ----
 % ./gohltb -h          
 Usage of ./gohltb:
+  -d    Include additional user details about the games.
   -g string
-        game title to query for
+        Game title to query for
+  -r    Return a single, random, game based on query.
+  -s string
+        How the response should be sorted. Sorts by name by default. Supports: name, main, mainp, comp, averagea, rating, popular, backlog, usersp, playing, speedruns, release (default "name")
 ----
 
 ==== Query for game
 
 .basic game query
 ----
-% ./gohltb -g "bugsnax"
+% ./gohltb -g "Mario" -r -d
 [
-    {
-        "title": "bugsnax",
-        "main": "7½ Hours",
-        "main-extra": "10½ Hours",
-        "completionist": "13½ Hours"
+  {
+    "id": "9361",
+    "title": "Super Mario 3D Land",
+    "url": "https://howlongtobeat.com/game?id=9361",
+    "box-art-url": "https://howlongtobeat.com/games/250px-Super-Mario-3D-Land-Logo.jpg",
+    "main": "7 Hours",
+    "main-extra": "12½ Hours",
+    "completionist": "22½ Hours",
+    "user-stats": {
+      "completed": "2.5K",
+      "rating": "81% by 940",
+      "backlog": "1.1K",
+      "playing": "200",
+      "retired": "78",
+      "speedruns": "5"
     }
+  }
 ]
 ----
 
@@ -34,7 +60,7 @@ Usage of ./gohltb:
 ==== Quick Start
 1. Add `require "github.com/fuzzylimes/gohltb" latest` to your `go.mod` file
 2. Run `go get` to pick up package
-3. Call `hltb.SearchGame` to query for a game
+3. Call `gohltb.SearchGame` to query for a game
 
 ===== Example
 
@@ -62,6 +88,32 @@ func main() {
 	fmt.Println(j)
 }
 ----
+
+==== Making a Query
+There are two main ways to create a query:
+
+. `gohltb.SearchGame` - searches for a specific game title, uses default query parameters
+. `gohltb.SearchByQuery` - searches using a user defined `HLTBQuery` object
+
+The quick start example above is the most basic example of a request that you can make
+using gohltb. It's intended to be used when you simply want to query for a game by a
+title, and you don't care about much of anything else.
+
+If you're looking to define a more specific query, you would want to use the `gohltb.SearchByQuery`
+method. This takes in a `HLTBQuery` with your specified user parameters. This enables you
+to query by/for:
+
+- game title
+- platform
+- sorting
+- sort order
+- random responses
+- additional details
+- pages
+
+
+==== Handling Response
+All response data tha
 
 === Disclaimer
 

@@ -84,8 +84,8 @@ func (g *GameTimesPage) HasNext() bool {
 	return g.NextPage != 0
 }
 
-// GetNext will return the next page, if present
-func (g *GameTimesPage) GetNext() (*GameTimesPage, error) {
+// GetNextPage will return the next page, if present
+func (g *GameTimesPage) GetNextPage() (*GameTimesPage, error) {
 	if !g.HasNext() {
 		return &GameTimesPage{}, errors.New("Page not found")
 	}
