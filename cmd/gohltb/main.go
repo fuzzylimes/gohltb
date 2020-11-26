@@ -35,7 +35,7 @@ func main() {
 		Random:   randomGame,
 	}
 
-	games, err := gohltb.SearchByQuery(q)
+	games, err := gohltb.SearchGamesByQuery(q)
 	if err != nil {
 		log.Fatal(err)
 	}

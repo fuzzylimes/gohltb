@@ -1,7 +1,6 @@
 package gohltb
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -30,38 +29,11 @@ const (
 	urlPrefix string = "https://howlongtobeat.com/"
 )
 
-// GameTimes are the times it takes to complete a game
-type GameTimes struct {
-	ID            string            `json:"id"`                   // ID in howlongtobeat.com's database
-	Title         string            `json:"title"`                // Title of game
-	URL           string            `json:"url"`                  // Link to game page
-	BoxArtURL     string            `json:"box-art-url"`          // Link to boxart
-	Main          string            `json:"main"`                 // Completion time for Main category
-	MainExtra     string            `json:"main-extra"`           // Completion time for Main + Extra category
-	Completionist string            `json:"completionist"`        // Completion time for Completionist category
-	Other         map[string]string `json:"other,omitempty"`      // Times that don't fall under the main 3 time categories
-	UserStats     *UserStats        `json:"user-stats,omitempty"` // Optional additional user details (only present when requested)
-}
-
-// UserStats are additional stats based on user activity on howlongtobeat.com
-// This information is only included when additional user details are requested
-type UserStats struct {
-	Completed string `json:"completed,omitempty"` // Number of users that have marked the game as Completed
-	Rating    string `json:"rating,omitempty"`    // Average User rating
-	Backlog   string `json:"backlog,omitempty"`   // Number of users that have placed game in their backlog
-	Playing   string `json:"playing,omitempty"`   // Number of users that are currently playing through a game
-	Retired   string `json:"retired,omitempty"`   // Number of users that did not finish a game
-	SpeedRuns string `json:"speedruns,omitempty"` // Number of users that have submitted speedruns for the game
-}
-
-// GameTimesPage is a page of responses
-type GameTimesPage struct {
-	Games        []*GameTimes `json:"games"`       // Slice of GameTimes
-	TotalPages   int          `json:"total-pages"` // Total number of pages
-	CurrentPage  int          `json:"curent-page"` // Current page number
-	NextPage     int          `json:"next-page"`   // Next page number
-	TotalMatches int          `json:"matches"`     // Total query matches
-	requestQuery *HLTBQuery   // Query associated with this response
+// ResultPage ...
+type ResultPage interface {
+	HasNext() bool
+	GetNextPage() (ResultPage, error)
+	JSON() (string, error)
 }
 
 // HLTBQuery is the query to be run
@@ -79,42 +51,41 @@ type HLTBQuery struct {
 	Page          int
 }
 
-// HasNext will check to see if there is a next page that can be retrieved
-func (g *GameTimesPage) HasNext() bool {
-	return g.NextPage != 0
+func (h *HLTBQuery) gameQuery() {
+	h.QueryType = GameQuery
 }
 
-// GetNextPage will return the next page, if present
-func (g *GameTimesPage) GetNextPage() (*GameTimesPage, error) {
-	if !g.HasNext() {
-		return &GameTimesPage{}, errors.New("Page not found")
-	}
-	query := g.requestQuery
-	query.Page = g.NextPage
-	return SearchByQuery(query)
+func (h *HLTBQuery) userQuery() {
+	h.QueryType = UserQuery
 }
 
-// JSON will convert a ManyGameTImes object into a json string
-func (g *GameTimesPage) JSON() (string, error) {
-	var r string
-	s, err := json.MarshalIndent(g.Games, "", "  ")
-	if err == nil {
-		r = string(s)
-	}
-	return r, err
+// SearchGames performs a search for the provided game title
+func SearchGames(query string) (*GameResultsPage, error) {
+	res, err := handleSearch(queryURL, &HLTBQuery{Query: query})
+	return res.(*GameResultsPage), err
 }
 
-// SearchGame performs a search for the provided game title
-func SearchGame(query string) (*GameTimesPage, error) {
-	return handleSearch(queryURL, &HLTBQuery{Query: query})
+// SearchGamesByQuery queries using a set of user defined parameters
+func SearchGamesByQuery(q *HLTBQuery) (*GameResultsPage, error) {
+	q.gameQuery()
+	res, err := handleSearch(queryURL, q)
+	return res.(*GameResultsPage), err
 }
 
-// SearchByQuery queries using a set of user defined parameters
-func SearchByQuery(q *HLTBQuery) (*GameTimesPage, error) {
-	return handleSearch(queryURL, q)
+// SearchUsers performs a search for the provided user name
+func SearchUsers(query string) (*UserResultsPage, error) {
+	res, err := handleSearch(queryURL, &HLTBQuery{Query: query, QueryType: UserQuery})
+	return res.(*UserResultsPage), err
 }
 
-func handleSearch(qURL string, q *HLTBQuery) (*GameTimesPage, error) {
+// SearchUsersByQuery queries using a set of user defined parameters
+func SearchUsersByQuery(q *HLTBQuery) (*UserResultsPage, error) {
+	q.userQuery()
+	res, err := handleSearch(queryURL, q)
+	return res.(*UserResultsPage), err
+}
+
+func handleSearch(qURL string, q *HLTBQuery) (ResultPage, error) {
 	handleDefaults(q)
 	form := buildForm(q)
 
@@ -134,6 +105,7 @@ func handleSearch(qURL string, q *HLTBQuery) (*GameTimesPage, error) {
 	return pages, nil
 }
 
+// buildForm will construct the form payload sent to the server.
 func buildForm(q *HLTBQuery) url.Values {
 	// Handle the Random parameter string
 	var random string
@@ -158,12 +130,15 @@ func buildForm(q *HLTBQuery) url.Values {
 	}
 }
 
+// handleDefaults will set all of the default form values for the query. It
+// handles the cases where user has not provided values where they should be
+// included
 func handleDefaults(q *HLTBQuery) {
 	if q.QueryType == "" {
 		q.QueryType = GameQuery
 	}
 	if q.SortBy == "" {
-		q.SortBy = MostPopular
+		q.SortBy = SortByGameName
 	}
 	if q.SortDirection == "" {
 		q.SortDirection = NormalOrder
@@ -177,17 +152,17 @@ func handleDefaults(q *HLTBQuery) {
 }
 
 // parseResponse converts the http response object into a ManyGameTimes object
-func parseResponse(r *http.Response, q *HLTBQuery) (*GameTimesPage, error) {
-	games := &GameTimesPage{}
-	var gameslice []*GameTimes
+func parseResponse(r *http.Response, q *HLTBQuery) (*GameResultsPage, error) {
+	games := &GameResultsPage{}
+	var gameslice []*GameResult
 	// Should eventually handle 404 vs 400 vs 500 etc.
 	if r.StatusCode != 200 {
-		return games, errors.New("Error retrieving data")
+		return nil, errors.New("Error retrieving data")
 	}
 
 	doc, err := goquery.NewDocumentFromReader(r.Body)
 	if err != nil {
-		return games, err
+		return nil, err
 	}
 
 	if strings.Contains(doc.Find("li").Nodes[0].FirstChild.Data, "No results") {
@@ -203,11 +178,11 @@ func parseResponse(r *http.Response, q *HLTBQuery) (*GameTimesPage, error) {
 		url, _ := title.Attr("href")
 		id := strings.SplitAfter(url, "game?id=")[1]
 
-		game := &GameTimes{
+		game := &GameResult{
 			ID:        id,
 			URL:       urlPrefix + url,
 			BoxArtURL: boxArt,
-			Title:     sanitizeName(title.Text()),
+			Title:     sanitizeTitle(title.Text()),
 		}
 		userStats := &UserStats{}
 
@@ -258,7 +233,7 @@ func parseResponse(r *http.Response, q *HLTBQuery) (*GameTimesPage, error) {
 
 }
 
-func parsePages(doc *goquery.Document, games *GameTimesPage, p int) {
+func parsePages(doc *goquery.Document, games *GameResultsPage, p int) {
 	if p == 1 {
 		regex := regexp.MustCompile(`Found ([1-9]+) Game`)
 		numGames := regex.FindStringSubmatch(doc.Find("h3").Nodes[0].FirstChild.Data)[1]
@@ -278,8 +253,8 @@ func parsePages(doc *goquery.Document, games *GameTimesPage, p int) {
 	}
 }
 
-// sanitizeName will remove any unexpected characters from a game title
-func sanitizeName(s string) string {
+// sanitizeTitle will remove any unexpected characters from a game title
+func sanitizeTitle(s string) string {
 	regx := regexp.MustCompile(`[\s]{2,}`)
 	s = strings.TrimSpace(s)
 	s = strings.ReplaceAll(s, "\n", " ")

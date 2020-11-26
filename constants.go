@@ -111,39 +111,62 @@ const (
 	ZXSpectrum           Platform = "ZX Spectrum"
 
 	/*
-		Sort by
+		Sort by - games
 
 		Specifies how the responses should be sorted.
 		Responses will be sorted by game title by default.
 	*/
 
-	// Name sorts by game title - default
-	Name SortBy = "name"
-	// MainStory sorts by the main story competion time (shortest to longest)
-	MainStory SortBy = "main"
-	// MainExtras sorts by the main + extras competion time (shortest to longest)
-	MainExtras SortBy = "mainp"
-	// Completionist sorts by the completionist competion time (shortest to longest)
-	Completionist SortBy = "comp"
-	// AverageTime sorts by the average competion time (shortest to longest)
-	AverageTime SortBy = "averagea"
-	// TopRated sorts by games with the highest user rating (highest to lowest)
-	TopRated SortBy = "rating"
-	// MostPopular sorts by games that have been added by the most number of users
-	MostPopular SortBy = "popular"
-	// MostBacklogs sorts by the number of users with the game in their backlog
-	MostBacklogs SortBy = "backlog"
-	// MostSubmissions sorts by the number of user submissions (submitted a time)
-	MostSubmissions SortBy = "usersp"
-	// MostPlayed sorts by the number of users that have completed the game
-	MostPlayed SortBy = "playing"
-	// MostSpeedruns sorts by the number of submitted speedruns for a game
+	// SortByGameName sorts by game title - default
+	SortByGameName SortBy = "name"
+	// SortByGameMainStory sorts by the main story competion time (shortest to longest)
+	SortByGameMainStory SortBy = "main"
+	// SortByGameMainExtras sorts by the main + extras competion time (shortest to longest)
+	SortByGameMainExtras SortBy = "mainp"
+	// SortByGameCompletionist sorts by the completionist competion time (shortest to longest)
+	SortByGameCompletionist SortBy = "comp"
+	// SortByGameAverageTime sorts by the average competion time (shortest to longest)
+	SortByGameAverageTime SortBy = "averagea"
+	// SortByGameTopRated sorts by games with the highest user rating (highest to lowest)
+	SortByGameTopRated SortBy = "rating"
+	// SortByGameMostPopular sorts by games that have been added by the most number of users
+	SortByGameMostPopular SortBy = "popular"
+	// SortByGameMostBacklogs sorts by the number of users with the game in their backlog
+	SortByGameMostBacklogs SortBy = "backlog"
+	// SortByGameMostSubmissions sorts by the number of user submissions (submitted a time)
+	SortByGameMostSubmissions SortBy = "usersp"
+	// SortByGameMostPlayed sorts by the number of users that have completed the game
+	SortByGameMostPlayed SortBy = "playing"
+	// SortByGameMostSpeedruns sorts by the number of submitted speedruns for a game
 	// (note that these are the speed runs submitted to howlongtobeat.com, not speedrun.com)
-	MostSpeedruns SortBy = "speedruns"
-	// ReleaseDate sorts by the release date of the game (earliest to most recent)
-	ReleaseDate SortBy = "release"
+	SortByGameMostSpeedruns SortBy = "speedruns"
+	// SortByGameReleaseDate sorts by the release date of the game (earliest to most recent)
+	SortByGameReleaseDate SortBy = "release"
 
-	// Length Range - used when search by time range
+	/*
+		Sort by - users
+
+		Specifies how the responses should be sorted.
+		Responses will be sorted by user activity.
+	*/
+
+	// SortByUserTopPosters will sort by the most active comunity members
+	SortByUserTopPosters SortBy = "postcount"
+	// SortByUserName will sort by user's display name
+	SortByUserName SortBy = "name"
+	// SortByUserGender will sort by user's gender
+	SortByUserGender SortBy = "gender"
+	// SortByUserCompleted will sort by user's number of completed games
+	SortByUserCompleted SortBy = "numcomp"
+	// SortByUserBacklog will sort by user's number of games in their backlog
+	SortByUserBacklog SortBy = "numbacklog"
+
+	/*
+		Length Range
+
+		Used when searching by time range. Provided start and end times will be filtered
+		using this LenthRange parameter.
+	*/
 
 	// RangeMainStory will search Main Story completion times
 	RangeMainStory LengthRange = "main"

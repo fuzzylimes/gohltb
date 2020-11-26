@@ -8,10 +8,10 @@ import (
 	"testing"
 )
 
-func makeCall(file string, q *HLTBQuery) (*GameTimesPage, error) {
+func makeCall(file string, q *HLTBQuery) (*GameResultsPage, error) {
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
-		return &GameTimesPage{}, err
+		return &GameResultsPage{}, err
 	}
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, string(data))
@@ -23,7 +23,7 @@ func makeCall(file string, q *HLTBQuery) (*GameTimesPage, error) {
 	resp, err := handleSearch(mockURL, q)
 	// j, _ := resp.JSON()
 	// fmt.Println(j)
-	return resp, nil
+	return resp.(*GameResultsPage), nil
 }
 
 func TestValidHtmlParse(t *testing.T) {
@@ -144,7 +144,7 @@ func TestNon200Response(t *testing.T) {
 		fmt.Printf("Got %v, expected Error retrieving data", err.Error())
 		t.Fail()
 	}
-	if resp.Games != nil {
+	if resp.(*GameResultsPage) != nil {
 		fmt.Println("Expected nil object")
 		t.Fail()
 	}
