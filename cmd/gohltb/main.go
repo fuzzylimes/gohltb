@@ -35,7 +35,9 @@ func main() {
 		Random:   randomGame,
 	}
 
-	games, err := gohltb.SearchGamesByQuery(q)
+	client := gohltb.NewDefaultClient()
+
+	games, err := client.SearchGamesByQuery(q)
 	if err != nil {
 		log.Fatal(err)
 	}
