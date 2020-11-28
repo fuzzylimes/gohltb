@@ -2,6 +2,10 @@
 :toc:
 :toclevels: 5
 
+image:https://goreportcard.com/badge/github.com/fuzzylimes/gohltb[Go Report Card]
+image:https://pkg.go.dev/badge/github.com/fuzzylimes/gohltb[PkgGoDev]
+image:https://img.shields.io/github/v/release/fuzzylimes/gohltb[GitHub release (latest by date)]
+
 gohltb is an unofficial cli tool and go library for the website howlongtobeat.com.
 It provides an aggregated view of user completion times for video games.
 

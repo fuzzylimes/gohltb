@@ -46,7 +46,7 @@ func (u *UserResultsPage) HasNext() bool {
 }
 
 // GetNextPage will return the next page, if it exists. Uses the client
-// from the initial request to make additional queries. 
+// from the initial request to make additional queries.
 func (u *UserResultsPage) GetNextPage() (*UserResultsPage, error) {
 	if !u.HasNext() {
 		return &UserResultsPage{}, errors.New("Page not found")
@@ -86,7 +86,7 @@ func (h *HLTBClient) SearchUsers(query string) (*UserResultsPage, error) {
 }
 
 // SearchUsersByQuery queries using a set of user defined parameters. Used
-// for running more complex queries. Takes in a HLTBQuery object, with 
+// for running more complex queries. Takes in a HLTBQuery object, with
 // parameters tailored to a user query. You may include any of the following:
 //     * Query - user name
 //     * QueryType - UserQuery

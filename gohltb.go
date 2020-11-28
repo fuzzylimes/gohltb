@@ -58,17 +58,17 @@ type Pages interface {
 //
 // example: client.SearchGamesByQuery(&HLTBQuery{query: "Mario", random: true})
 type HLTBQuery struct {
-	Query         string 		// String to query by
-	QueryType     QueryType		// Type of query to perform - games or users
+	Query         string        // String to query by
+	QueryType     QueryType     // Type of query to perform - games or users
 	SortBy        SortBy        // Specify how data should be sorted
 	SortDirection SortDirection // Specify direction data should be sorted
-	Platform      Platform		// Platform to query against (only used with game queries)
-	LengthType    LengthRange	// Optional filter based on completion times (games only)
-	LengthMin     string		// Optional min length for LengthType (games only)
-	LengthMax     string		// Optional max length for LengthType (games only)
-	Modifier      Modifier		// Toggle additional filter methods (games only)
-	Random        bool			// Return a single, random, entry based on parameters
-	Page          int			// Page number to return
+	Platform      Platform      // Platform to query against (only used with game queries)
+	LengthType    LengthRange   // Optional filter based on completion times (games only)
+	LengthMin     string        // Optional min length for LengthType (games only)
+	LengthMax     string        // Optional max length for LengthType (games only)
+	Modifier      Modifier      // Toggle additional filter methods (games only)
+	Random        bool          // Return a single, random, entry based on parameters
+	Page          int           // Page number to return
 }
 
 // NewDefaultClient will create a new HLTBClient with default parameters. This

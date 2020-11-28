@@ -17,7 +17,7 @@ import (
 //     * Main - time to complete the main game
 //     * MainExtra - time to complete the main game and all extras
 //     * Completionist - time to 100% the game
-//     * Other - These are other kinds of times, primarily reserved for 
+//     * Other - These are other kinds of times, primarily reserved for
 //		 multiplayer games
 type GameResult struct {
 	ID            string            `json:"id"`                   // ID in howlongtobeat.com's database
@@ -62,7 +62,7 @@ func (g *GameResultsPage) HasNext() bool {
 }
 
 // GetNextPage will return the next page, if it exists. Uses the client
-// from the initial request to make additional queries. 
+// from the initial request to make additional queries.
 func (g *GameResultsPage) GetNextPage() (*GameResultsPage, error) {
 	if !g.HasNext() {
 		return &GameResultsPage{}, errors.New("Page not found")
@@ -102,7 +102,7 @@ func (h *HLTBClient) SearchGames(query string) (*GameResultsPage, error) {
 }
 
 // SearchGamesByQuery queries using a set of user defined parameters. Used
-// for running more complex queries. Takes in a HLTBQuery object, with 
+// for running more complex queries. Takes in a HLTBQuery object, with
 // parameters tailored to a user query. You may include any of the following:
 //     * Query - user name
 //     * QueryType - UserQuery

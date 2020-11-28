@@ -119,13 +119,13 @@ const (
 
 	// SortByGameName sorts by game title - default
 	SortByGameName SortBy = "name"
-	// SortByGameMainStory sorts by the main story competion time (shortest to longest)
+	// SortByGameMainStory sorts by the main story completion time (shortest to longest)
 	SortByGameMainStory SortBy = "main"
-	// SortByGameMainExtras sorts by the main + extras competion time (shortest to longest)
+	// SortByGameMainExtras sorts by the main + extras completion time (shortest to longest)
 	SortByGameMainExtras SortBy = "mainp"
-	// SortByGameCompletionist sorts by the completionist competion time (shortest to longest)
+	// SortByGameCompletionist sorts by the completionist completion time (shortest to longest)
 	SortByGameCompletionist SortBy = "comp"
-	// SortByGameAverageTime sorts by the average competion time (shortest to longest)
+	// SortByGameAverageTime sorts by the average completion time (shortest to longest)
 	SortByGameAverageTime SortBy = "averagea"
 	// SortByGameTopRated sorts by games with the highest user rating (highest to lowest)
 	SortByGameTopRated SortBy = "rating"

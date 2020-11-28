@@ -22,7 +22,7 @@ func makeUserCall(file string, q *HLTBQuery) (*UserResultsPage, error) {
 	client := NewCustomClient(&HTTPClient{baseURL: mockURL})
 
 	resp, err := client.SearchUsersByQuery(q)
-	return resp, nil
+	return resp, err
 }
 
 func TestValidHtmlParse(t *testing.T) {
@@ -90,10 +90,6 @@ func TestMultipleUserPages(t *testing.T) {
 	if err != nil {
 		t.Fatal("Unexpected error: ", err)
 	}
-	if res.Users[0].Name != "tiamat911" {
-		fmt.Printf("Got %v, expected tiamat911", res.Users[0].Name)
-		t.Fail()
-	}
 	if res.CurrentPage != 1 {
 		fmt.Printf("Got %v, expected 1", res.CurrentPage)
 		t.Fail()
@@ -108,10 +104,6 @@ func TestMultipleUserPages(t *testing.T) {
 	}
 	if res.TotalPages != 12782 {
 		fmt.Printf("Got %v, expected 12782", res.TotalPages)
-		t.Fail()
-	}
-	if !res.HasNext() {
-		fmt.Println("There should be a next page")
 		t.Fail()
 	}
 
