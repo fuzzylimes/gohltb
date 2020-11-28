@@ -9,7 +9,10 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// UserResult is a user that uses howlongtobeat.com
+// UserResult are the data object for Users. They contain information about a user
+// that can be collected from the user query response. Users are the people on
+// howlongtobeat.com that contribute completion times to the site or track their game
+// collections.
 type UserResult struct {
 	ID        string   `json:"id"`                  // ID in howlongtobeat.com's database
 	Name      string   `json:"name"`                // User's display name
@@ -24,7 +27,9 @@ type UserResult struct {
 	Accolades []string `json:"accolades,omitempty"` // User accolades for activity on the site. This is things like years of service.
 }
 
-// UserResultsPage is a page of user responses
+// UserResultsPage is a page of user responses. It is the data model that will be
+// returned for any User query. Provides ability to move between pages of User
+// results.
 type UserResultsPage struct {
 	Users        []*UserResult `json:"users"`       // Slice of UserResult
 	TotalPages   int           `json:"total-pages"` // Total number of pages
@@ -32,7 +37,7 @@ type UserResultsPage struct {
 	NextPage     int           `json:"next-page"`   // Next page number
 	TotalMatches int           `json:"matches"`     // Total query matches
 	requestQuery *HLTBQuery    // Query associated with this response
-	hltbClient   *HLTBClient   // Client for further requests
+	hltbClient   *HLTBClient   // Client that was used for the initial request, needed for retrieving later pages
 }
 
 // HasNext will check to see if there is a next page that can be retrieved
@@ -40,7 +45,8 @@ func (u *UserResultsPage) HasNext() bool {
 	return u.NextPage != 0
 }
 
-// GetNextPage will return the next page, if present
+// GetNextPage will return the next page, if it exists. Uses the client
+// from the initial request to make additional queries. 
 func (u *UserResultsPage) GetNextPage() (*UserResultsPage, error) {
 	if !u.HasNext() {
 		return &UserResultsPage{}, errors.New("Page not found")
@@ -60,24 +66,41 @@ func (u *UserResultsPage) JSON() (string, error) {
 	return r, err
 }
 
+// setTotalPages for Pages interface
 func (u *UserResultsPage) setTotalPages(p int) {
 	u.TotalPages = p
 }
 
+// setTotalMatches for Pages interface
 func (u *UserResultsPage) setTotalMatches(m int) {
 	u.TotalMatches = m
 }
 
-// SearchUsers performs a search for the provided user name
+// SearchUsers performs a search for the provided user name. Will populate
+// default values for the remaining query parameters aside from the provided
+// user name.
+//
+// Note: A query with an empty string will query ALL users.
 func (h *HLTBClient) SearchUsers(query string) (*UserResultsPage, error) {
 	return userSearch(h, &HLTBQuery{Query: query})
 }
 
-// SearchUsersByQuery queries using a set of user defined parameters
+// SearchUsersByQuery queries using a set of user defined parameters. Used
+// for running more complex queries. Takes in a HLTBQuery object, with 
+// parameters tailored to a user query. You may include any of the following:
+//     * Query - user name
+//     * QueryType - UserQuery
+//     * SortBy - one of the various "SortByUser" options
+//     * SortDirection - sort direcion, based on SortBy
+//     * Random - whether or not to retrieve random value
+//     * Page - page of responses to return
+//
+// Note: A query with an empty "Query" string will query ALL users.
 func (h *HLTBClient) SearchUsersByQuery(q *HLTBQuery) (*UserResultsPage, error) {
 	return userSearch(h, q)
 }
 
+// userSearch is the central method for running user queries
 func userSearch(h *HLTBClient, q *HLTBQuery) (*UserResultsPage, error) {
 	handleUserDefaults(q)
 	doc, err := searchQuery(h, q)
@@ -109,7 +132,7 @@ func handleUserDefaults(q *HLTBQuery) {
 	}
 }
 
-// parseUserResponse converts the http response object into a ManyGameTimes object
+// parseUserResponse parses the http response object into a UserResultsPage object
 func parseUserResponse(doc *goquery.Document, q *HLTBQuery) (*UserResultsPage, error) {
 	users := &UserResultsPage{}
 	var userslice []*UserResult
@@ -117,6 +140,7 @@ func parseUserResponse(doc *goquery.Document, q *HLTBQuery) (*UserResultsPage, e
 	// Handle the page numbers
 	parsePages(doc, users, q.Page)
 
+	// Handle each user
 	doc.Find("ul > li.back_darkish").Each(func(userCount int, userDetails *goquery.Selection) {
 		var location string
 		var accolades []string
@@ -128,6 +152,7 @@ func parseUserResponse(doc *goquery.Document, q *HLTBQuery) (*UserResultsPage, e
 		if ok := userDetails.Find("h4").Length(); ok > 0 {
 			location = userDetails.Find("h4").First().Text()
 		}
+		// Handle any user accolades - these are awards earned by users
 		if ok := userDetails.Find(".search_list_details > h3 > span").Length(); ok > 0 {
 			accoladeSpan := userDetails.Find(".search_list_details > h3 > span").First()
 			accoladeSpan.Find("span").Each(func(aCount int, accolade *goquery.Selection) {
@@ -146,6 +171,8 @@ func parseUserResponse(doc *goquery.Document, q *HLTBQuery) (*UserResultsPage, e
 			Accolades: accolades,
 		}
 
+		// There are set of different options that a user can choose to enter, none of
+		// which are mandatory. This will handle each of them, if they're present.
 		userDetails.Find(".search_list_tidbit.text_white").Each(func(userDetailCount int, userDetail *goquery.Selection) {
 			nextValue := strings.TrimSpace(userDetail.Next().Text())
 			switch category := userDetail.Text(); {

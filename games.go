@@ -8,7 +8,17 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// GameResult are the times it takes to complete a game
+// GameResult are the data object for Games. Games contain the thing that
+// you're probably most interested in, which are the completion times.
+// All of the times that are collected are presented as strings, you will
+// need to handle any kind of conversions if you need them as numbers.
+//
+// Completion times break down as:
+//     * Main - time to complete the main game
+//     * MainExtra - time to complete the main game and all extras
+//     * Completionist - time to 100% the game
+//     * Other - These are other kinds of times, primarily reserved for 
+//		 multiplayer games
 type GameResult struct {
 	ID            string            `json:"id"`                   // ID in howlongtobeat.com's database
 	Title         string            `json:"title"`                // Title of game
@@ -22,7 +32,8 @@ type GameResult struct {
 }
 
 // UserStats are additional stats based on user activity on howlongtobeat.com
-// This information is only included when additional user details are requested
+// This information is only included when additional user details are requested,
+// by setting the Modifier in HLTBQuery to ShowUserStats
 type UserStats struct {
 	Completed string `json:"completed,omitempty"` // Number of users that have marked the game as Completed
 	Rating    string `json:"rating,omitempty"`    // Average User rating
@@ -32,7 +43,9 @@ type UserStats struct {
 	SpeedRuns string `json:"speedruns,omitempty"` // Number of users that have submitted speedruns for the game
 }
 
-// GameResultsPage is a page of game responses
+// GameResultsPage is a page of game responses. It is the data model that will be
+// returned for any Game query. Provides ability to move between pages of Game
+// results.
 type GameResultsPage struct {
 	Games        []*GameResult `json:"games"`       // Slice of GameResult
 	TotalPages   int           `json:"total-pages"` // Total number of pages
@@ -40,7 +53,7 @@ type GameResultsPage struct {
 	NextPage     int           `json:"next-page"`   // Next page number
 	TotalMatches int           `json:"matches"`     // Total query matches
 	requestQuery *HLTBQuery    // Query associated with this response
-	hltbClient   *HLTBClient   // Client for further requests
+	hltbClient   *HLTBClient   // Client that was used for the initial request, needed for retrieving later pages
 }
 
 // HasNext will check to see if there is a next page that can be retrieved
@@ -48,7 +61,8 @@ func (g *GameResultsPage) HasNext() bool {
 	return g.NextPage != 0
 }
 
-// GetNextPage will return the next page, if present
+// GetNextPage will return the next page, if it exists. Uses the client
+// from the initial request to make additional queries. 
 func (g *GameResultsPage) GetNextPage() (*GameResultsPage, error) {
 	if !g.HasNext() {
 		return &GameResultsPage{}, errors.New("Page not found")
@@ -68,24 +82,46 @@ func (g *GameResultsPage) JSON() (string, error) {
 	return r, err
 }
 
+// setTotalPages for Pages interface
 func (g *GameResultsPage) setTotalPages(p int) {
 	g.TotalPages = p
 }
 
+// setTotalMatches for Pages interface
 func (g *GameResultsPage) setTotalMatches(m int) {
 	g.TotalMatches = m
 }
 
-// SearchGames performs a search for the provided game title
+// SearchGames performs a search for the provided game title. Will populate
+// default values for the reamaining query parameters, aside from the provided
+// game title.
+//
+// Note: A query with an empty query string will query ALL games
 func (h *HLTBClient) SearchGames(query string) (*GameResultsPage, error) {
 	return gameSearch(h, &HLTBQuery{Query: query})
 }
 
-// SearchGamesByQuery queries using a set of user defined parameters
+// SearchGamesByQuery queries using a set of user defined parameters. Used
+// for running more complex queries. Takes in a HLTBQuery object, with 
+// parameters tailored to a user query. You may include any of the following:
+//     * Query - user name
+//     * QueryType - UserQuery
+//     * SortBy - one of the various "SortByUser" options
+//     * SortDirection - sort direcion, based on SortBy
+//     * Platform - restrict responses to platform (see constants.go)
+//     * LengthType - Type of length parameter to (optionally) fillter by
+//     * LengthMax - Max value for LengthType
+//     * LengthMin - Min value for LengthType
+//     * Modifier - Optional additional query parameters.
+//     * Random - whether or not to retrieve random value
+//     * Page - page of responses to return
+//
+// Note: A query with an empty "Query" string will query ALL games.
 func (h *HLTBClient) SearchGamesByQuery(q *HLTBQuery) (*GameResultsPage, error) {
 	return gameSearch(h, q)
 }
 
+// gameSearch is the central method for running user queries
 func gameSearch(h *HLTBClient, q *HLTBQuery) (*GameResultsPage, error) {
 	handleGameDefaults(q)
 	doc, err := searchQuery(h, q)
@@ -120,7 +156,7 @@ func handleGameDefaults(q *HLTBQuery) {
 	}
 }
 
-// parseGameResponse converts the http response object into a ManyGameTimes object
+// parseGameResponse parses the http response object into a GameResultsPage object
 func parseGameResponse(doc *goquery.Document, q *HLTBQuery) (*GameResultsPage, error) {
 	games := &GameResultsPage{}
 	var gameslice []*GameResult
@@ -128,6 +164,7 @@ func parseGameResponse(doc *goquery.Document, q *HLTBQuery) (*GameResultsPage, e
 	// Handle the page numbers
 	parsePages(doc, games, q.Page)
 
+	// Handle each game
 	doc.Find("ul > li.back_darkish").Each(func(gameCount int, gameDetails *goquery.Selection) {
 		boxArt, _ := gameDetails.Find("div > a > img").Attr("src")
 		title := gameDetails.Find("h3 > a")
@@ -142,6 +179,7 @@ func parseGameResponse(doc *goquery.Document, q *HLTBQuery) (*GameResultsPage, e
 		}
 		userStats := &UserStats{}
 
+		// Handle the case of multiplayer games which have non-standard response times
 		if gameDetails.Find(".search_list_details_block").First().Children().First().Is(".search_list_tidbit_short") {
 			otherMap := make(map[string]string)
 			gameDetails.Find(".search_list_tidbit_short").Each(func(timeCount int, timeDetail *goquery.Selection) {
@@ -149,6 +187,8 @@ func parseGameResponse(doc *goquery.Document, q *HLTBQuery) (*GameResultsPage, e
 			})
 			game.Other = otherMap
 		} else {
+			// Handle the various items that a game could have. Any of these options may be present,
+			// some of which are only present when ShowUserStats is enabled
 			gameDetails.Find(".search_list_tidbit.text_white").Each(func(timeCount int, timeDetail *goquery.Selection) {
 				nextValue := strings.TrimSpace(timeDetail.Next().Text())
 				switch timeType := timeDetail.Text(); {

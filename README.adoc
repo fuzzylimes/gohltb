@@ -21,12 +21,15 @@ it doesn't to a whole lot:
 ----
 % ./gohltb -h          
 Usage of ./gohltb:
-  -d    Include additional user details about the games.
-  -g string
-        Game title to query for
-  -r    Return a single, random, game based on query.
+  -d    Include additional user details when querying games.
+  -q string
+        Query string. This will be the game title if searching for games, or user name if searching for users.
+  -r    Return a single, random, game or user.
   -s string
-        How the response should be sorted. Sorts by name by default. Supports: name, main, mainp, comp, averagea, rating, popular, backlog, usersp, playing, speedruns, release (default "name")
+        How the response should be sorted. Sorts by name by default.
+        Games support: name, main, mainp, comp, averagea, rating, popular, backlog, usersp, playing, speedruns, release
+        Users support: name, gender, postcount, numcomp, numbacklog (default "name")
+  -u    Query users instead of games
 ----
 
 ==== Query for game
@@ -55,12 +58,27 @@ Usage of ./gohltb:
 ]
 ----
 
+.basic user query
+----
+% ./gohltb -g "Bob" -r -u
+[
+  {
+    "id": "BobGamingHD",
+    "name": "BobGamingHD",
+    "url": "https://howlongtobeat.com/user?n=BobGamingHD",
+    "avatar-url": "https://howlongtobeat.com/avatars/no_avatar.png",
+    "complete": "0"
+  }
+]
+----
+
 === Package
 
 ==== Quick Start
 1. Add `require "github.com/fuzzylimes/gohltb" latest` to your `go.mod` file
 2. Run `go get` to pick up package
-3. Call `gohltb.SearchGame` to query for a game
+3. Create a new `HLTBClient` by using `client := gohltb.NewDefaultClient()`
+4. Search for game using `client.SearchGames("title")`
 
 ===== Example
 
@@ -77,7 +95,8 @@ import (
 )
 
 func main() {
-	games, err := gohltb.SearchGame("pokemon")
+  client := gohltb.NewDefaultClient()
+	games, err := client.SearchGames("pokemon")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -92,14 +111,14 @@ func main() {
 ==== Making a Query
 There are two main ways to create a query:
 
-. `gohltb.SearchGame` - searches for a specific game title, uses default query parameters
-. `gohltb.SearchByQuery` - searches using a user defined `HLTBQuery` object
+. `gohltb.SearchGames` - searches for a specific game title, uses default query parameters
+. `gohltb.SearchGamesByQuery` - searches using a user defined `HLTBQuery` object
 
 The quick start example above is the most basic example of a request that you can make
 using gohltb. It's intended to be used when you simply want to query for a game by a
 title, and you don't care about much of anything else.
 
-If you're looking to define a more specific query, you would want to use the `gohltb.SearchByQuery`
+If you're looking to define a more specific query, you would want to use the `gohltb.SearchGamesByQuery`
 method. This takes in a `HLTBQuery` with your specified user parameters. This enables you
 to query by/for:
 
