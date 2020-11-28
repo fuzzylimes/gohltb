@@ -1,1 +1,3 @@
 gohltb.exe
+bin/*
+!bin/.gitkeep
