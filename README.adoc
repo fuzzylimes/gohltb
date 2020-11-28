@@ -1,5 +1,6 @@
 = gohltb (go howlongtobeat.com)
 :toc:
+:toclevels: 5
 
 gohltb is an unofficial cli tool and go library for the website howlongtobeat.com.
 It provides an aggregated view of user completion times for video games.
@@ -10,9 +11,9 @@ to use both of them.
 
 === CLI Tool
 The CLI tool is a very simple query implementation of the library. As of this time,
-it doesn't to a whole lot:
+it doesn't do a whole lot:
 
-. Takes in a set of user query parameters (i.e. game title).
+. Takes in a set of user query parameters (i.e. game title, user name).
 . Prints out a JSON conversion of the result data to the console.
 .. Response Data is always paged, and only current page will be printed.
 . That's it.
@@ -109,30 +110,164 @@ func main() {
 ----
 
 ==== Making a Query
-There are two main ways to create a query:
+There are two main ways to create a query: general search or a detailed query. A version
+of these queries exist for both games and users. The available methods are:
 
-. `gohltb.SearchGames` - searches for a specific game title, uses default query parameters
-. `gohltb.SearchGamesByQuery` - searches using a user defined `HLTBQuery` object
+. `SearchGames` - searches for a specific game title, using default query parameters
+. `SearchUsers` - searches for a specific user name, using default query parameters
+. `SearchGamesByQuery` - searches for games using `HLTBQuery` object
+. `SearchUsersByQuery` - searches for users using `HLTBQuery` object
 
 The quick start example above is the most basic example of a request that you can make
 using gohltb. It's intended to be used when you simply want to query for a game by a
-title, and you don't care about much of anything else.
+title, and you don't care about much of anything else. While the example shows how
+to do a game query, a user query would be done by swapping out `SearchGames` with
+`SearchUsers`.
 
-If you're looking to define a more specific query, you would want to use the `gohltb.SearchGamesByQuery`
-method. This takes in a `HLTBQuery` with your specified user parameters. This enables you
-to query by/for:
+If you're looking to define a more specific query, you would want to use one of the
+`SearchByQuery` methods. This takes in a `HLTBQuery` with your specified query parameters.
+Both Game and User queries utilize the same `HLTBQuery` object, but the supported
+parameters vary for each. It's important to note that many of the parameters used expect
+specific types. These types and all of their possible options are already available in
+the `constants.go` file.
 
-- game title
-- platform
-- sorting
-- sort order
-- random responses
-- additional details
-- pages
+[NOTE]
+Every query parameter is optional. You do not need to include any parameters that
+you do not care about. Any mandatory defaults are handled when values are not present.
 
+The table below shows the mapping for the query parameters. Note that a reference to
+(constant) means that it expects one of the constant values defined in the `constants.go`
+file:
+
+.Query Parameters
+|===
+|Parameter |Definition |Game Query | User Query
+
+|Query
+|String to query by
+|Game title
+|User name
+
+|QueryType (constant)
+|Type of query to perform - games or users
+|GameQuery
+|UserQuery
+
+|SortBy (constant)
+|Specify how data should be sorted
+|Supported "SortByGame"
+|Supported "SortByUser"
+
+|SortDirection (constant)
+|Specify direction data should be sorted
+|Supported SortDirection
+|Supported SortDirection
+
+|Platform (constant)
+|Platform to query against (only used with game queries)
+|Supported Platform
+|---
+
+|LengthType (constant)
+|Optional filter based on completion times (games only)
+|Supported LengthType
+|---
+
+|LengthMin (constant)
+|Optional min length for LengthType (games only)
+|Supported LengthMin
+|---
+
+|LengthMax (constant)
+|Optional max length for LengthType (games only)
+|Supported LengthMax
+|---
+
+|Modifier (constant)
+|Toggle additional filter methods (games only)
+|Supported Modifier
+|---
+
+|Random
+|Return a single, random, entry based on parameters
+|true,false
+|true,false
+
+|Page
+|Page number to return
+|int
+|int
+
+|===
 
 ==== Handling Response
-All response data tha
+All response data returned from queries is paginated. Because of this, each response
+objet comes with a set of helper methods to handle the response data:
+
+- `.JSON()` - convert response data to a JSON string
+- `.HasNext()` - check if there's a next page
+- `.GetNext()` - queries for the next page of data, if it exists
+
+=== Examples
+==== Query for Metal Gear Solid games on Playstation 2
+[source,golang]
+----
+func main() {
+  client := gohltb.NewDefaultClient()
+  query := &HLTBQuery{Query: "Metal Gear Solid", Platform: PlayStation2, SortBy: SortByGameMostPopular}
+	games, err := client.SearchGamesByQuery(query)
+	if err != nil {
+		log.Fatal(err)
+	}
+	j, err := games.JSON()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(j)
+}
+----
+
+==== Query for all GameBoy games, sorted by release date, newest first
+[source,golang]
+----
+func main() {
+  client := gohltb.NewDefaultClient()
+  query := &HLTBQuery{Platform: GameBoy, SortBy: SortByGameReleaseDate, SortDirection: ReverseOrder},
+	games, err := client.SearchGamesByQuery(query)
+	if err != nil {
+		log.Fatal(err)
+	}
+	j, err := games.JSON()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(j)
+  if games.HasNext() {
+    games, err = games.GetNext()
+  }
+}
+----
+
+==== Query for all Users named Bob, sorted by number of completed games
+[source,golang]
+----
+func main() {
+  client := gohltb.NewDefaultClient()
+  query := &HLTBQuery{Query: "Bob", SortBy: SortByUserCompleted},
+	users, err := client.SearchUsersByQuery(query)
+	if err != nil {
+		log.Fatal(err)
+	}
+	j, err := users.JSON()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(j)
+  if users.HasNext() {
+    users, err = users.GetNext()
+  }
+}
+----
 
 === Disclaimer
 
